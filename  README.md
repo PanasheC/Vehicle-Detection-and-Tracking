@@ -7,7 +7,7 @@ The main goal of the project is to create a software pipeline to identify vehicl
 ![Vehicle Detection and Tracking](images/title.gif)
 
 - `VehicleDetectandTracking.ipynb` - Jupyter notebook with code for the project
-- `laneline.py` - python program for lane line detection from the [project 4](https://github.com/PanasheC/Advanced-Lane-Finding).
+- `advancedlanefinding.py` - python program for lane line detection from the [project 4](https://github.com/PanasheC/Advanced-Lane-Finding).
 - `test_images` - a directory with test images
 - `camera_cal` - a directory with camera calibration images from the [project 4](https://github.com/PanasheC/Advanced-Lane-Finding).
 - `project_video_proc.mp4` - the result video
