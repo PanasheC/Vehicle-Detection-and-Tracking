@@ -41,6 +41,65 @@ from skimage.feature import hog
 %matplotlib inline
 ```
 
+## Methods used to extract HOG features
+
+A classifier is trained on real world images of cars which have been provided by Udacity.
+The project requires training a classifier that is able to predict if there is a car in a given image (subset of the whole image). Inorder to create a machine learnig pipeline for this task three types of features were used: HOG (Histogram of Oriented Gradients)HOG is a feature descriptor used in computer vision and image processing for the purpose of object detection. The technique counts occurrences of gradient orientation in localized portions of an image (shape features), binned color (color and shape features) and color histogram features (color only features) which is a representation of the distribution of colors in an image. This combination of features can provide enough information for image classification.
+
+Firstly, an automated approach was applied to tune the HOG parameters (`orientations, pixels_per_cell, cells_per_block`).
+
+Something like:
+```Python
+from skopt import gp_minimize
+space  = [(8, 64),                  # nbins
+          (6, 12),                  # orient
+          (4, 16),                   # pix_per_cell
+          (1, 2)]                   # cell_per_block
+i = 0
+def obj(params):
+    global i
+    nbins, orient, pix_per_cell, cell_per_block = params
+    car_features = extract_features(cars[0:len(cars):10], nbins, orient, pix_per_cell, cell_per_block)
+    notcar_features = extract_features(notcars[0:len(notcars):10], nbins, orient, pix_per_cell, cell_per_block)
+    y = np.hstack((np.ones(len(cars[0:len(cars):10])), np.zeros(len(notcars[0:len(notcars):10]))))
+    X = np.vstack((car_features, notcar_features)).astype(np.float64)                        
+    # Fit a per-column scaler
+    X_scaler = StandardScaler().fit(X)
+    # Apply the scaler to X
+    scaled_X = X_scaler.transform(X)
+    X_train, X_test, y_train, y_test = train_test_split(scaled_X, y, test_size=0.2, random_state=22)
+    svc = LinearSVC()
+    svc.fit(X_train, y_train)
+    test_acc = svc.score(X_test, y_test)
+    print i, params, test_acc
+    i+=1
+    return 1.0-test_acc
+    
+res = gp_minimize(obj, space, n_calls=20, random_state=22)
+"Best score=%.4f" % res.fun
+```
+
+However, results were not very good because it ended with high numbers for HOG parameters which results in very slow feature extraction with comparable to less computational-expensive parameters set accuracy. That is why, the parameters for HOG as well as parameters for other features extractors were finetuned manually by try and error process so that it optimizes accuracy and computation time.
+
+Here is an example of a train image and its HOG:
+
+![Example image](images/ex.jpg) ![HOG of example image](images/hog.jpg)
+
+Final parameter for feature extraction:
+
+```Python
+color_space = 'LUV' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
+orient = 8  # HOG orientations
+pix_per_cell = 8 # HOG pixels per cell
+cell_per_block = 2 # HOG cells per block
+hog_channel = 0 # Can be 0, 1, 2, or "ALL"
+spatial_size = (16, 16) # Spatial binning dimensions
+hist_bins = 32    # Number of histogram bins
+```
+
+Feature scaling and Normalizing ensures that a classifier's behavior isn't dominated by just a subset of the features, and that the training process is as efficient as possible. Standardizing the features so that they are centered around 0 with a standard deviation of 1 is not only important if we are comparing measurements that have different units, but it is also a general requirement for many machine learning algorithms.That is why, feature list was normolized by the `StandardScaler()` method from `sklearn`. The data is splitted into training and testing sets (80% and 20%). The classifier is a linear SVM. It was found that it performs well enough and quite fast for the task. The code under *Classifier* represents these operations.
+
+
 ## Features extraction
 
 Here we define functions for features extraction (HOG, binned color and color histogram features). The functions are based on code from the Udacity's lectures.
@@ -429,27 +488,27 @@ print(round(time.time()-t, 2), 'Seconds to process test images')
 
 
 
-![png](images/output_18_1.png)
+![png](output_19_1.png)
 
 
 
-![png](images/output_18_2.png)
+![png](output_19_2.png)
 
 
 
-![png](images/output_18_3.png)
+![png](output_19_3.png)
 
 
 
-![png](images/output_18_4.png)
+![png](output_19_4.png)
 
 
 
-![png](images/output_18_5.png)
+![png](output_19_5.png)
 
 
 
-![png](images/output_18_6.png)
+![png](output_19_6.png)
 
 
 As we can see on examples above, the classifier successfully finds cars on the test images. However, there is a false positive example, so, we will need to apply a kind of filter (such as heat map) and the classifier failed to find a car on th 3rd image because it is too small for it. That is why, we will need to use multi scale windows.
@@ -475,7 +534,7 @@ show_img(window_img)
 ```
 
 
-![png](images/output_21_0.png)
+![png](output_22_0.png)
 
 
 ### Refine detected car position
@@ -501,7 +560,7 @@ show_img(window_img)
 ```
 
 
-![png](images/output_23_0.png)
+![png](output_24_0.png)
 
 
 The following code chunk find windows with a car in a given range with windows of a given scale.
@@ -577,7 +636,7 @@ for image in glob.glob('test_images/test3.jpg'):
 ```
 
 
-![png](images/output_28_0.png)
+![png](output_29_0.png)
 
 
 ## Frames processing
@@ -742,7 +801,7 @@ show_img(frame_proc(image, lane=True, vis=False))
 
 
 
-![png](images/output_31_1.png)
+![png](output_32_1.png)
 
 
 ## Video processing
